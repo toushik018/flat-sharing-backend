@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String             @id @default(uuid())
+  username      String             @unique
+  email         String             @unique
+  password      String
+  profilePhoto  String?
+  contactNumber String?
+  role          UserRole           @default(USER)
+  isActive      UserStatus         @default(ACTIVATE)
+  flats         Flat[]
+  requests      FlatShareRequest[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  admin         Admin?
+
+  @@map("users")
+}
+
+model Admin {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  email        String   @unique
+  password     String
+  profilePhoto String?
+  role         UserRole @default(ADMIN)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [email], references: [email])
+
+  @@map("admins")
+}
+
+model Flat {
+  id          String             @id @default(uuid())
+  location    String
+  description String
+  rentAmount  Float
+  bedrooms    Int
+  amenities   String[]
+  photos      String[]
+  postedBy    String
+  user        User               @relation(fields: [postedBy], references: [id])
+  requests    FlatShareRequest[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@map("flats")
+}
+
+model FlatShareRequest {
+  id             String   @id @default(uuid())
+  userId         String
+  flatId         String
+  additionalInfo String?
+  status         String
+  user           User     @relation(fields: [userId], references: [id])
+  flat           Flat     @relation(fields: [flatId], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("flat_share_requests")
+}
+
+enum UserStatus {
+  ACTIVATE
+  DEACTIVATE
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
