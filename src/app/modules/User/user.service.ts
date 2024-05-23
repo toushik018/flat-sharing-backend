@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import prisma from "../../utils/prisma";
+import { UserRole } from "@prisma/client";
 
 type UserCreateInput = {
     username: string;
@@ -9,12 +10,12 @@ type UserCreateInput = {
     contactNumber?: string;
 };
 
-type AdminCreateInput = {
+interface AdminCreateInput {
     username: string;
     email: string;
     password: string;
     profilePhoto?: string;
-};
+}
 
 
 const createUser = async (payload: UserCreateInput) => {
@@ -43,31 +44,39 @@ const createUser = async (payload: UserCreateInput) => {
 };
 
 
-// const createAdmin = async (payload: AdminCreateInput) => {
-//     const { username, email, password, profilePhoto } = payload;
+const createAdmin = async (data: AdminCreateInput) => {
+    const hashedPassword: string = await bcrypt.hash(data.password, 12);
 
-//     // Hash the password
-//     const hashedPassword = await bcrypt.hash(password, 12);
+    const userData = {
+        username: data.username,
+        email: data.email,
+        password: hashedPassword,
+        role: UserRole.ADMIN
+    };
 
-//     // Create the admin
-//     const createdAdmin = await prisma.admin.create({
-//         data: {
-//             username: username,
-//             email: email,
-//             password: hashedPassword,
-//             profilePhoto: profilePhoto,
-//             user: {
-//                 connect: {
-//                     email: email
-//                 }
-//             }
-//         }
-//     });
 
-//     return createdAdmin;
-// };
+    const result = await prisma.$transaction(async (transactionClient) => {
+        await transactionClient.user.create({
+            data: userData
+        });
+
+
+        const createdAdminData = await transactionClient.admin.create({
+            data: {
+                username: data.username,
+                email: data.email,
+                role: UserRole.ADMIN,
+                profilePhoto: data.profilePhoto
+            }
+        });
+        return createdAdminData;
+    });
+
+    return result;
+};
 
 
 export const UserServices = {
     createUser,
+    createAdmin
 };

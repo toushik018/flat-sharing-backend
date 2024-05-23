@@ -16,12 +16,12 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
 
 const createAdmin = catchAsync(async (req: Request, res: Response) => {
     const result = await UserServices.createAdmin(req.body);
-
+    console.log(result, "constructing admin");
     sendResponse(res, {
         statusCode: 201,
         success: true,
         message: "Admin created successfully",
-        data: result,
+        data: null,
     });
 });
 
