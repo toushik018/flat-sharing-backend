@@ -26,13 +26,14 @@ model User {
 }
 
 model Admin {
-  id           String   @id @default(uuid())
-  username     String   @unique
-  email        String   @unique
-  profilePhoto String?
-  role         UserRole @default(ADMIN)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(uuid())
+  username      String   @unique
+  email         String   @unique
+  profilePhoto  String?
+  contactNumber String?
+  role          UserRole @default(ADMIN)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   user User @relation(fields: [email], references: [email], onDelete: Cascade)
 
@@ -45,7 +46,7 @@ model Flat {
   description String
   rentAmount  Float
   bedrooms    Int
-  amenities   String[]
+  amenities   String
   photos      String[]
   postedBy    String
   user        User               @relation(fields: [postedBy], references: [id])
@@ -57,15 +58,16 @@ model Flat {
 }
 
 model FlatShareRequest {
-  id             String   @id @default(uuid())
-  userId         String
-  flatId         String
-  additionalInfo String?
-  status         String
-  user           User     @relation(fields: [userId], references: [id])
-  flat           Flat     @relation(fields: [flatId], references: [id])
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id           String        @id @default(uuid())
+  userId       String
+  flatId       String
+  moveInDate   String?
+  lengthOfStay String?
+  status       RequestStatus @default(PENDING)
+  user         User          @relation(fields: [userId], references: [id])
+  flat         Flat          @relation(fields: [flatId], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   @@map("flat_share_requests")
 }
@@ -78,4 +80,10 @@ enum UserStatus {
 enum UserRole {
   USER
   ADMIN
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }

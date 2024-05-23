@@ -1,6 +1,11 @@
 import bcrypt from "bcrypt";
 import prisma from "../../utils/prisma";
-import { UserRole } from "@prisma/client";
+import { Prisma, UserRole, UserStatus } from "@prisma/client";
+import AppError from "../../errors/AppError";
+import httpStatus from "http-status";
+import { TPaginationOptions } from "../../interface/pagination";
+import { IUpdateUserRole, IUpdateUserStatus, UserInput } from "./user.constant";
+import { paginationHelper } from "../../helpers/paginationHelper";
 
 type UserCreateInput = {
     username: string;
@@ -51,7 +56,8 @@ const createAdmin = async (data: AdminCreateInput) => {
         username: data.username,
         email: data.email,
         password: hashedPassword,
-        role: UserRole.ADMIN
+        role: UserRole.ADMIN,
+        profilePhoto: data.profilePhoto
     };
 
 
@@ -75,8 +81,140 @@ const createAdmin = async (data: AdminCreateInput) => {
     return result;
 };
 
+const getAllUsers = async (params: UserInput, options: TPaginationOptions) => {
+    const { limit, page, skip } = paginationHelper.calculatePagination(options);
+    const { searchTerm, username, email, role, status, ...filterData } = params;
+    const andCondition: Prisma.UserWhereInput[] = [];
+
+    if (searchTerm) {
+        andCondition.push({
+            OR: ["username", "email"].map(field => ({
+                [field]: {
+                    contains: searchTerm,
+                    mode: "insensitive"
+                }
+            }))
+        });
+    }
+
+    if (username) {
+        andCondition.push({
+            username: {
+                contains: username,
+                mode: "insensitive"
+            }
+        });
+    }
+
+    if (email) {
+        andCondition.push({
+            email: {
+                contains: email,
+                mode: "insensitive"
+            }
+        });
+    }
+
+
+
+    if (status) {
+        andCondition.push({
+            isActive: {
+                equals: status as UserStatus
+            }
+        });
+    }
+
+    if (Object.keys(filterData).length > 0) {
+        andCondition.push({
+            AND: Object.keys(filterData).map(key => ({
+                [key]: {
+                    equals: (filterData as Record<string, unknown>)[key]
+                }
+            }))
+        });
+    }
+
+    const whereCondition: Prisma.UserWhereInput = {
+        AND: andCondition
+    };
+
+    const result = await prisma.user.findMany({
+        where: whereCondition,
+        include: {
+            flats: true,
+            requests: true
+        },
+        skip,
+        take: limit,
+        orderBy: options.sortBy && options.sortOrder ? {
+            [options.sortBy]: options.sortOrder
+        } : {
+            createdAt: "desc"
+        }
+    });
+
+    const total = await prisma.user.count({
+        where: whereCondition
+    });
+
+    return {
+        meta: {
+            page,
+            limit,
+            total
+        },
+        data: result
+    };
+};
+
+
+
+const updateUserRole = async (payload: IUpdateUserRole) => {
+    const { userId, newRole } = payload;
+
+    const existingUser = await prisma.user.findUnique({
+        where: { id: userId },
+    });
+
+    if (!existingUser) {
+        throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { role: newRole },
+    });
+
+    return updatedUser;
+};
+
+
+
+
+export const updateUserStatus = async (payload: IUpdateUserStatus) => {
+    const { userId, status } = payload;
+
+    const existingUser = await prisma.user.findUnique({
+        where: { id: userId },
+    });
+
+    if (!existingUser) {
+        throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { isActive: status },
+    });
+
+    return updatedUser;
+};
 
 export const UserServices = {
     createUser,
-    createAdmin
-};
+    createAdmin,
+    getAllUsers,
+    updateUserRole,
+    updateUserStatus
+}

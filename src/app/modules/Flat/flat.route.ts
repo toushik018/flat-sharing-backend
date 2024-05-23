@@ -1,14 +1,17 @@
 import express from 'express';
 import { FlatControllers } from './flat.controller';
 import auth from '../../middleware/auth';
+import { UserRole } from '@prisma/client';
 
 const router = express.Router();
 
 
 
-router.post('/flats', auth(), FlatControllers.addFlatIntoDB);
-router.get('/flats', FlatControllers.getAllFlats);
+router.get('/flats', auth(UserRole.ADMIN), FlatControllers.getAllFlats);
+router.get('/flat/:id', auth(), FlatControllers.getFlatPostById);
 router.put('/flats/:flatId', auth(), FlatControllers.updateFlat);
+router.post('/flats', auth(), FlatControllers.addFlatIntoDB);
+router.delete('/flats/:flatId', auth(UserRole.ADMIN, UserRole.USER), FlatControllers.deleteFlat);
 
 
 

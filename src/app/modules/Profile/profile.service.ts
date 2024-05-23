@@ -1,11 +1,11 @@
-import { UserProfile } from "@prisma/client";
+import { User } from "@prisma/client";
 import prisma from "../../utils/prisma";
 
-const getUserProfile = async (userId: string) => {
+const getUserProfile = async (email: string) => {
 
-    const userProfile = await prisma.userProfile.findUnique({
+    const userProfile = await prisma.user.findUnique({
         where: {
-            userId
+            email
         }
     });
 
@@ -14,22 +14,24 @@ const getUserProfile = async (userId: string) => {
 
 
 
-const updateUserProfile = async (userId: string, userProfileData: UserProfile): Promise<UserProfile> => {
+const updateUserProfile = async (userId: string, userData: User): Promise<User> => {
 
-    const existingUserProfile = await prisma.userProfile.findUniqueOrThrow({
+    const existingUserProfile = await prisma.user.findUniqueOrThrow({
         where: {
-            userId
+            id: userId
         }
     });
 
-    const updatedUserProfile = await prisma.userProfile.update({
+
+    const updatedUserProfile = await prisma.user.update({
         where: {
-            userId
+            id: userId
         },
         data: {
-            ...userProfileData
+            ...userData
         }
     });
+
 
     return updatedUserProfile;
 };

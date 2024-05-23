@@ -22,7 +22,7 @@
     "typescript": "^5.4.3"
   },
   "dependencies": {
-    "@prisma/client": "^5.11.0",
+    "@prisma/client": "^5.14.0",
     "@types/cookie-parser": "^1.4.7",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",

@@ -1,14 +1,39 @@
-import { BookingStatus, Flat, Prisma, User, UserProfile } from "@prisma/client";
+import { Flat, Prisma, User } from "@prisma/client";
 import prisma from "../../utils/prisma";
 import { flatSearchableFields } from "./flat.constants";
 import { FlatInput } from "./flat.interface";
 import { TPaginationOptions } from "../../interface/pagination";
 import { paginationHelper } from "../../helpers/paginationHelper";
+import AppError from "../../errors/AppError";
+import httpStatus from "http-status";
 
-const addFlatIntoDB = async (payload: any) => {
+const postFlatIntoDB = async (userId: any, flatData: Flat) => {
+    // Check if the user is active
+    const existingUser = await prisma.user.findUnique({
+        where: { id: userId },
+    });
 
-    const flatData = await prisma.flat.create({ data: payload });
-    return flatData;
+    if (!existingUser) {
+        throw new AppError(httpStatus.NOT_FOUND, "User not found");
+    }
+
+    if (existingUser.isActive !== 'ACTIVATE') {
+        throw new AppError(httpStatus.FORBIDDEN, "Deactivated users cannot post a flat");
+    }
+
+    const newFlat = await prisma.flat.create({
+        data: {
+            location: flatData.location,
+            description: flatData.description,
+            rentAmount: flatData.rentAmount,
+            bedrooms: flatData.bedrooms,
+            amenities: flatData.amenities,
+            photos: flatData.photos,
+            postedBy: userId,
+        },
+    });
+
+    return newFlat;
 }
 
 
@@ -16,34 +41,56 @@ const addFlatIntoDB = async (payload: any) => {
 
 const getAllFlats = async (params: FlatInput, options: TPaginationOptions) => {
     const { limit, page, skip } = paginationHelper.calculatePagination(options);
-    const { searchTerm, availability, ...filterdata } = params;
+    const { searchTerm, location, minPrice, maxPrice, bedrooms, ...filterData } = params;
     const andCondition: Prisma.FlatWhereInput[] = [];
 
-    if (params.searchTerm) {
+
+    if (searchTerm) {
         andCondition.push({
-            OR: flatSearchableFields.map(field => ({
+            OR: ["location", "description"].map(field => ({
                 [field]: {
-                    contains: params.searchTerm,
+                    contains: searchTerm,
                     mode: "insensitive"
                 }
             }))
         });
     }
 
-
-    const availabilityValue = typeof availability === 'string' ? availability === 'true' : availability;
-    if (availabilityValue !== undefined && availabilityValue !== null) {
+    if (location) {
         andCondition.push({
-            availability: availabilityValue
+            location: {
+                contains: location,
+                mode: "insensitive"
+            }
         });
     }
 
-
-    if (Object.keys(filterdata).length > 0) {
+    if (minPrice !== undefined || maxPrice !== undefined) {
+        const priceCondition: Prisma.FloatFilter = {};
+        if (minPrice !== undefined) {
+            priceCondition.gte = Number(minPrice);
+        }
+        if (maxPrice !== undefined) {
+            priceCondition.lte = Number(maxPrice);
+        }
         andCondition.push({
-            AND: Object.keys(filterdata).map(key => ({
+            rentAmount: priceCondition
+        });
+    }
+
+    if (bedrooms) {
+        andCondition.push({
+            bedrooms: {
+                equals: bedrooms
+            }
+        });
+    }
+
+    if (Object.keys(filterData).length > 0) {
+        andCondition.push({
+            AND: Object.keys(filterData).map(key => ({
                 [key]: {
-                    equals: (filterdata as any)[key]
+                    equals: filterData[key]
                 }
             }))
         });
@@ -53,10 +100,12 @@ const getAllFlats = async (params: FlatInput, options: TPaginationOptions) => {
         AND: andCondition
     };
 
-
-
     const result = await prisma.flat.findMany({
         where: whereCondition,
+        include: {
+            user: true
+        },
+
         skip,
         take: limit,
         orderBy: options.sortBy && options.sortOrder ? {
@@ -101,9 +150,56 @@ const updateFlat = async (id: string, data: Partial<Flat>): Promise<Flat> => {
 }
 
 
+const getFlatPostById = async (id: string) => {
+
+    const flatPost = await prisma.flat.findUnique({
+        where: { id },
+        include: {
+            user: true,
+            requests: true,
+        },
+    });
+
+    if (!flatPost) {
+        throw new AppError(httpStatus.NOT_FOUND, 'Flat post not found');
+    }
+
+    return flatPost;
+};
+
+
+
+const deleteFlat = async (userId: string, userRole: string, flatId: string) => {
+
+    const existingFlat = await prisma.flat.findUnique({
+        where: {
+            id: flatId
+        }
+    });
+
+    if (!existingFlat) {
+        throw new AppError(httpStatus.NOT_FOUND, "Flat not found");
+    }
+
+    // Check if the user is the owner of the flat
+    if (existingFlat.postedBy !== userId && userRole !== 'ADMIN') {
+        throw new AppError(httpStatus.FORBIDDEN, "You are not authorized to delete this flat");
+    }
+    // Delete the flat
+    const deletedFlat = await prisma.flat.delete({
+        where: {
+            id: flatId
+        }
+    });
+
+    return deletedFlat;
+};
+
 
 export const FlatServices = {
-    addFlatIntoDB,
+    postFlatIntoDB,
     getAllFlats,
     updateFlat,
+    getFlatPostById,
+    deleteFlat
 }

@@ -1,2 +1,2 @@
-export const flatFilterableFields = ["location", "description", "searchTerm", "availability"];
-export const flatSearchableFields = ["location", "description", "utilitiesDescription"];
+export const flatFilterableFields = ["location", "minPrice", "maxPrice", "bedrooms"];
+export const flatSearchableFields = ["location", "description", "amenities"];

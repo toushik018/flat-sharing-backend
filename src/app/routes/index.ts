@@ -2,7 +2,7 @@ import express from "express";
 import { userRoutes } from "../modules/User/user.route";
 import { authRoutes } from "../modules/Auth/auth.route";
 import { flatRoutes } from "../modules/Flat/flat.route";
-import { bookingRoutes } from "../modules/Booking/booking.route";
+import { bookingRoutes } from "../modules/FlatShareRequest/flatRequest.route";
 import { profileRoutes } from "../modules/Profile/profile.route";
 
 
