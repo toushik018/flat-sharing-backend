@@ -6,6 +6,7 @@ import config from "../../config";
 import { IChangePassword } from "./auth.constants";
 import AppError from "../../errors/AppError";
 import httpStatus from "http-status";
+import { Secret } from "jsonwebtoken";
 
 const loginUser = async (payload: {
     email: string,
@@ -90,7 +91,38 @@ export const changePassword = async (user: any, payload: IChangePassword) => {
 };
 
 
+const refreshToken = async (token: string) => {
+    let decodedData;
+
+    try {
+        decodedData = jwtHelper.verifyToken(token, config.jwt_refresh_secret as Secret);
+    } catch (err) {
+        throw new Error("You are not authorized")
+    }
+
+    const isUserExist = await prisma.user.findUniqueOrThrow({
+        where: {
+            email: decodedData.email
+        }
+    });
+
+    const accessToken = jwtHelper.generateToken({
+        email: isUserExist.email,
+        role: isUserExist.role
+    },
+        config.jwt_access_secret as string,
+        config.jwt_expire_in as string
+    );
+
+
+    return {
+        accessToken
+    };
+
+}
+
 export const AuthServices = {
     loginUser,
-    changePassword
+    changePassword,
+    refreshToken
 }

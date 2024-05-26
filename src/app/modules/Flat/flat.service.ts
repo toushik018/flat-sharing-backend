@@ -168,6 +168,20 @@ const getFlatPostById = async (id: string) => {
 };
 
 
+const getMyFlats = async (userId: string): Promise<Flat[]> => {
+    const userFlats = await prisma.flat.findMany({
+        where: {
+            postedBy: userId,
+        },
+    });
+
+    if (!userFlats) {
+        throw new AppError(httpStatus.NOT_FOUND, "No flats found for this user");
+    }
+
+    return userFlats;
+};
+
 
 const deleteFlat = async (userId: string, userRole: string, flatId: string) => {
 
@@ -201,5 +215,6 @@ export const FlatServices = {
     getAllFlats,
     updateFlat,
     getFlatPostById,
-    deleteFlat
+    deleteFlat,
+    getMyFlats
 }

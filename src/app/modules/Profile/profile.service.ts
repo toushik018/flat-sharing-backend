@@ -14,14 +14,13 @@ const getUserProfile = async (email: string) => {
 
 
 
-const updateUserProfile = async (userId: string, userData: User): Promise<User> => {
+const updateUserProfile = async (userId: string, userData: Partial<User>): Promise<User> => {
 
     const existingUserProfile = await prisma.user.findUniqueOrThrow({
         where: {
             id: userId
         }
     });
-
 
     const updatedUserProfile = await prisma.user.update({
         where: {
@@ -32,9 +31,9 @@ const updateUserProfile = async (userId: string, userData: User): Promise<User> 
         }
     });
 
-
     return updatedUserProfile;
 };
+
 
 export const ProfileServices = {
     getUserProfile,

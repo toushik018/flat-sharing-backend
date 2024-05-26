@@ -19,7 +19,6 @@ const submitFlatShareRequest = async (
         where: { id: payload.flatId },
     });
 
-    console.log(existingFlat);
     if (!existingUser || !existingFlat) {
         throw new AppError(404, 'User or flat not found');
     }
@@ -31,7 +30,7 @@ const submitFlatShareRequest = async (
             flatId: payload.flatId,
             moveInDate: payload.moveInDate,
             lengthOfStay: payload.lengthOfStay,
-            status: RequestStatus.PENDING, // or any other default status
+            status: RequestStatus.PENDING, 
         },
     });
 
@@ -61,7 +60,6 @@ const getUserFlatShareRequests = async (userId: string) => {
 
 const updateFlatShareRequestStatus = async (data: TFlatShareRequestStatus) => {
     const { requestId, status, userId } = data;
-    console.log(userId);
     // Validate request existence
     const flatShareRequest = await prisma.flatShareRequest.findUnique({
         where: { id: requestId },

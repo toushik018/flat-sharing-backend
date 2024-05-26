@@ -38,7 +38,7 @@ const getUserFlatShareRequests = catchAsync(async (req: Request & { user?: any }
 const updateFlatShareRequestStatus = catchAsync(async (req: Request & { user?: any }, res: Response) => {
     const userId = req.user.id;
     const { requestId, status } = req.body;
-    console.log(req.user);
+
 
     const updatedRequest = await FlatShareRequestService.updateFlatShareRequestStatus({ requestId, status, userId });
 

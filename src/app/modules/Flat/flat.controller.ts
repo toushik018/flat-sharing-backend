@@ -35,9 +35,10 @@ const getAllFlats: RequestHandler = catchAsync(async (req: Request, res: Respons
     });
 });;
 
+
 const getFlatPostById = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
-
+    console.log(id);
     const flatPost = await FlatServices.getFlatPostById(id);
 
     sendResponse(res, {
@@ -60,6 +61,21 @@ const updateFlat = catchAsync(async (req: Request, res: Response) => {
         data: result
     })
 });
+
+
+const getUserFlats = catchAsync(async (req: Request & { user?: any }, res: Response) => {
+    const userId = req.user.id;
+
+    const flats = await FlatServices.getMyFlats(userId);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "User flats retrieved successfully",
+        data: flats,
+    });
+});
+
 const deleteFlat = catchAsync(async (req: Request & { user?: any }, res: Response) => {
     const userId = req.user.id;
     const role = req.user.role;
@@ -85,5 +101,6 @@ export const FlatControllers = {
     getAllFlats,
     updateFlat,
     deleteFlat,
-    getFlatPostById
+    getFlatPostById,
+    getUserFlats
 } 

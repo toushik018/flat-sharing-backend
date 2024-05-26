@@ -7,7 +7,6 @@ import httpStatus from "http-status";
 const getUserProfile = catchAsync(async (req: Request & { user?: any }, res: Response) => {
     const email = req.user.email;
     const result = await ProfileServices.getUserProfile(email);
-    console.log(result);
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
@@ -19,7 +18,7 @@ const getUserProfile = catchAsync(async (req: Request & { user?: any }, res: Res
 
 
 const updateUserProfile = catchAsync(async (req: Request & { user?: any }, res: Response) => {
-    const userId = req.user.id
+    const userId = req.user.id;
     const userProfile = req.body;
     const result = await ProfileServices.updateUserProfile(userId, userProfile);
     sendResponse(res, {
@@ -27,7 +26,7 @@ const updateUserProfile = catchAsync(async (req: Request & { user?: any }, res: 
         success: true,
         message: "User profile updated successfully",
         data: result
-    })
+    });
 });
 
 
