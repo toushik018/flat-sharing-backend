@@ -30,7 +30,7 @@ const submitFlatShareRequest = async (
             flatId: payload.flatId,
             moveInDate: payload.moveInDate,
             lengthOfStay: payload.lengthOfStay,
-            status: RequestStatus.PENDING, 
+            status: RequestStatus.PENDING,
         },
     });
 
@@ -60,18 +60,16 @@ const getUserFlatShareRequests = async (userId: string) => {
 
 const updateFlatShareRequestStatus = async (data: TFlatShareRequestStatus) => {
     const { requestId, status, userId } = data;
+
     // Validate request existence
     const flatShareRequest = await prisma.flatShareRequest.findUnique({
         where: { id: requestId },
-        include: {
-            flat: true,
-        }
+        include: { flat: true },
     });
 
     if (!flatShareRequest) {
         throw new AppError(httpStatus.NOT_FOUND, 'Flat share request not found');
     }
-
 
     // Check if the userId matches the flat's postedBy field
     if (flatShareRequest.flat.postedBy !== userId) {
@@ -82,16 +80,31 @@ const updateFlatShareRequestStatus = async (data: TFlatShareRequestStatus) => {
     const updatedFlatShareRequest = await prisma.flatShareRequest.update({
         where: { id: requestId },
         data: { status },
-        include: {
-            user: true,
-            flat: true,
-        }
+        include: { user: true, flat: true },
     });
 
     return updatedFlatShareRequest;
 }
 
 
+const getRequestsForFlat = async (userId: string) => {
+    const flats = await prisma.flat.findMany({
+        where: { postedBy: userId },
+        include: {
+            requests: {
+                include: {
+                    user: true,
+                },
+            },
+        },
+    });
+
+    if (!flats) {
+        throw new AppError(httpStatus.NOT_FOUND, 'No flats found for this user');
+    }
+
+    return flats;
+};
 
 
 
@@ -101,5 +114,6 @@ const updateFlatShareRequestStatus = async (data: TFlatShareRequestStatus) => {
 export const FlatShareRequestService = {
     submitFlatShareRequest,
     getUserFlatShareRequests,
-    updateFlatShareRequestStatus
+    updateFlatShareRequestStatus,
+    getRequestsForFlat
 }

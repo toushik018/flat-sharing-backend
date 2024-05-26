@@ -19,5 +19,7 @@ router.post('/admin-register',
     // validateRequest(userValidationSchema.createAdminSchema),
     userControllers.createAdmin);
 
+router.delete('/delete/:userId', auth(UserRole.ADMIN), userControllers.deleteUser);
+
 
 export const userRoutes = router;

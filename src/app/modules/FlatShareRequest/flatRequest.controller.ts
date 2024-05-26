@@ -39,7 +39,6 @@ const updateFlatShareRequestStatus = catchAsync(async (req: Request & { user?: a
     const userId = req.user.id;
     const { requestId, status } = req.body;
 
-
     const updatedRequest = await FlatShareRequestService.updateFlatShareRequestStatus({ requestId, status, userId });
 
     sendResponse(res, {
@@ -51,9 +50,24 @@ const updateFlatShareRequestStatus = catchAsync(async (req: Request & { user?: a
 });
 
 
+const getRequestsForFlat = catchAsync(async (req: Request & { user?: any }, res: Response) => {
+    const userId = req.user.id;
+
+    const result = await FlatShareRequestService.getRequestsForFlat(userId);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: 'Flats with requests retrieved successfully',
+        data: result,
+    });
+});
+
+
 
 export const FlatShareRequestControllers = {
     submitFlatRequest,
     getUserFlatShareRequests,
-    updateFlatShareRequestStatus
+    updateFlatShareRequestStatus,
+    getRequestsForFlat
 } 
