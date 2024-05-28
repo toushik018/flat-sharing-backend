@@ -185,29 +185,38 @@ const getMyFlats = async (userId: string): Promise<Flat[]> => {
 
 const deleteFlat = async (userId: string, userRole: string, flatId: string) => {
 
-    const existingFlat = await prisma.flat.findUnique({
-        where: {
-            id: flatId
+    return await prisma.$transaction(async (transactionClient) => {
+        const existingFlat = await transactionClient.flat.findUnique({
+            where: {
+                id: flatId
+            }
+        });
+
+        if (!existingFlat) {
+            throw new AppError(httpStatus.NOT_FOUND, "Flat not found");
         }
-    });
 
-    if (!existingFlat) {
-        throw new AppError(httpStatus.NOT_FOUND, "Flat not found");
-    }
-
-    // Check if the user is the owner of the flat
-    if (existingFlat.postedBy !== userId && userRole !== 'ADMIN') {
-        throw new AppError(httpStatus.FORBIDDEN, "You are not authorized to delete this flat");
-    }
-    // Delete the flat
-    const deletedFlat = await prisma.flat.delete({
-        where: {
-            id: flatId
+        // Check if the user is the owner of the flat
+        if (existingFlat.postedBy !== userId && userRole !== 'ADMIN') {
+            throw new AppError(httpStatus.FORBIDDEN, "You are not authorized to delete this flat");
         }
-    });
 
-    return deletedFlat;
+        // Delete related flat share requests
+        await transactionClient.flatShareRequest.deleteMany({
+            where: { flatId: flatId },
+        });
+
+        // Delete the flat
+        const deletedFlat = await transactionClient.flat.delete({
+            where: {
+                id: flatId
+            }
+        });
+
+        return deletedFlat;
+    });
 };
+
 
 
 export const FlatServices = {

@@ -213,21 +213,33 @@ export const updateUserStatus = async (payload: IUpdateUserStatus) => {
 
 
 const deleteUser = async (userId: string) => {
-    const existingUser = await prisma.user.findUnique({
-        where: { id: userId },
+    return await prisma.$transaction(async (transactionClient) => {
+        // Check if the user exists
+        const existingUser = await transactionClient.user.findUnique({
+            where: { id: userId },
+        });
+
+        if (!existingUser) {
+            throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+        }
+
+        // Delete related flat share requests
+        await transactionClient.flatShareRequest.deleteMany({
+            where: { userId: userId },
+        });
+
+        // Delete related flats
+        await transactionClient.flat.deleteMany({
+            where: { postedBy: userId },
+        });
+
+        // Delete the user
+        await transactionClient.user.delete({
+            where: { id: userId },
+        });
+
+        return { id: userId };
     });
-
- 
-
-    if (!existingUser) {
-        throw new AppError(httpStatus.NOT_FOUND, 'User not found');
-    }
-
-    await prisma.user.delete({
-        where: { id: userId },
-    });
-
-    return { id: userId };
 };
 
 
