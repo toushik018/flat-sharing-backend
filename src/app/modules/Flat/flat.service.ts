@@ -79,9 +79,10 @@ const getAllFlats = async (params: FlatInput, options: TPaginationOptions) => {
     }
 
     if (bedrooms) {
+        const bedroom = Number(bedrooms)
         andCondition.push({
             bedrooms: {
-                equals: bedrooms
+                equals: bedroom
             }
         });
     }
