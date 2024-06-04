@@ -38,7 +38,6 @@ const getAllFlats: RequestHandler = catchAsync(async (req: Request, res: Respons
 
 const getFlatPostById = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
-    console.log(id);
     const flatPost = await FlatServices.getFlatPostById(id);
 
     sendResponse(res, {

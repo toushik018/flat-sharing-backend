@@ -6,7 +6,6 @@ import httpStatus from "http-status"
 
 
 
-
 const loginUser = catchAsync(async (req: Request, res: Response) => {
 
     const result = await AuthServices.loginUser(req.body);
@@ -15,8 +14,10 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 
     res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: false
-    })
+        secure: true,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    });
+
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
@@ -54,8 +55,37 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 })
 
 
+const forgetPassword = catchAsync(async (req: Request, res: Response) => {
+
+    await AuthServices.forgetPassword(req.body)
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Check your email address",
+        data: null
+    })
+})
+
+
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+
+    const token = req.headers.authorization || "";
+    const result = await AuthServices.resetPassword(token, req.body)
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Password reset successfully",
+        data: result
+    })
+})
+
+
 export const AuthControllers = {
     loginUser,
     changePassword,
-    refreshToken
+    refreshToken,
+    forgetPassword,
+    resetPassword
 }

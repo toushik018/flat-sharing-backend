@@ -8,7 +8,10 @@ import router from './app/routes';
 
 
 const app: Application = express();
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(cors({
+    origin: 'https://flat-sharing-client-henna.vercel.app',
+    credentials: true
+}));
 app.use(cookieParser());
 
 // parsers
@@ -18,7 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req: Request, res: Response) => {
     res.send({
-        Message: "This Flat sharing server, assignment 9"
+        Message: "This Flat sharing server, assignment 9 running"
     })
 })
 
@@ -29,7 +32,6 @@ app.use(globalError)
 
 
 app.use((req: Request, res: Response, next: NextFunction) => {
-    console.log(req);
     res.status(httpStatus.NOT_FOUND).json({
         success: false,
         message: "API Not Found",
